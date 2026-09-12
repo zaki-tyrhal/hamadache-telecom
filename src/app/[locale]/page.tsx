@@ -1,104 +1,82 @@
-"use client";
+import { getTranslations } from "next-intl/server";
+import { db } from "@/db";
+import { products, productImages } from "@/db/schema";
+import { whatsappLink } from "@/lib/site";
+import Hero from "@/components/Hero";
+import CategoryBento from "@/components/CategoryBento";
+import CategoryBar from "@/components/CategoryBar";
+import ProductTabs from "@/components/ProductTabs";
+import ProductCard from "@/components/ProductCard";
 import Link from "next/link";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { useTranslations, useLocale } from "next-intl";
 
-export default function LandingPage() {
-	const t = useTranslations();
-	const locale = useLocale();
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
+	const { locale } = await params;
+	const t = await getTranslations({ locale });
+
+	const allProducts = await db.select().from(products as any).all();
+	const list = Array.isArray(allProducts) ? (allProducts as any[]) : [];
+	const imgRows = await db.select().from(productImages as any).all();
+	const imgs = Array.isArray(imgRows) ? (imgRows as any[]) : [];
+	const firstImageByProductId = new Map<number, any>();
+	for (const img of imgs) {
+		const pid = Number(img.productId);
+		if (!firstImageByProductId.has(pid)) firstImageByProductId.set(pid, img);
+	}
+	const withImages = list.map((p) => {
+		const img = firstImageByProductId.get(Number(p.id));
+		return { ...p, imageUrl: img?.url, imageAlt: img?.alt };
+	});
+	const discounted = withImages.filter((p) => p.compareAtPriceCents && p.compareAtPriceCents > p.priceCents).slice(0, 4);
+
 	return (
-		<main className="min-h-screen bg-black text-white">
-			<section className="relative h-[90vh] flex items-center justify-center">
-				<motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-[18vw] leading-none tracking-tight font-serif">
-					{t("brand")}
-				</motion.h1>
-				<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="absolute bottom-16">
-					<Link href={`/${locale}/shop`} className="border border-white px-6 py-3 uppercase tracking-widest hover:bg-white hover:text-black transition-colors">{t("cta_explore")}</Link>
-				</motion.div>
-			</section>
+		<main className="min-h-screen">
+			<Hero />
+			<CategoryBento t={t} locale={locale} />
+			<CategoryBar t={t} locale={locale} />
+			<ProductTabs products={withImages} locale={locale} />
 
-			<section className="px-6 md:px-10 xl:px-20 py-24 grid md:grid-cols-2 gap-16">
-				<div className="prose prose-invert max-w-none">
-					<h2 className="font-serif text-4xl">{t("story_title")}</h2>
-					<p className="text-neutral-300 text-lg">Crafted silhouettes, enduring materials, and quiet confidence. Amigo celebrates modern femininity with editorial minimalism.</p>
-				</div>
-				<div className="grid grid-cols-2 gap-4">
-					<div className="aspect-[3/4] overflow-hidden bg-neutral-900 flex items-center justify-center">
-						<Image
-							src="https://us.louisvuitton.com/images/is/image/lv/1/PP_VP_L/louis-vuitton-lv-heritage-35mm-reversible-belt--M4250U_PM1_Worn%20view.png?wid=1090&hei=1090"
-							alt="Placeholder 1"
-							width={400}
-							height={533}
-							className="object-cover w-full h-full"
-							priority
-						/>
+			{discounted.length > 0 && (
+				<section className="px-4 md:px-10 py-14">
+					<h2 className="text-lg font-semibold mb-6">{t("discounts_title")}</h2>
+					<div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-6">
+						{discounted.map((p) => (
+							<ProductCard
+								key={p.id}
+								id={p.id}
+								locale={locale}
+								name={p.name}
+								brand={p.brand}
+								priceCents={p.priceCents}
+								compareAtPriceCents={p.compareAtPriceCents}
+								inStock={p.inStock}
+								condition={p.condition}
+								imageUrl={p.imageUrl}
+								imageAlt={p.imageAlt}
+							/>
+						))}
 					</div>
-					<div className="aspect-[3/4] overflow-hidden mt-10 bg-neutral-900 flex items-center justify-center">
-						<Image
-							src="https://us.louisvuitton.com/images/is/image/lv/1/PP_VP_L/louis-vuitton-lv-oxford-loafer--BVL01KGZ02_PM1_Worn%20view.png?wid=1090&hei=1090"
-							alt="Placeholder 2"
-							width={400}
-							height={533}
-							className="object-cover w-full h-full"
-							priority
-						/>
+				</section>
+			)}
+
+			<section className="px-4 md:px-10 pb-16">
+				<div className="bg-dark text-white rounded-2xl p-10 md:p-16 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-start">
+					<div>
+						<h2 className="text-2xl md:text-4xl font-bold">{t("big_sale_title")}</h2>
+						<p className="mt-3 text-white/60 max-w-md">{t("big_sale_desc")}</p>
 					</div>
+					<a
+						href={whatsappLink()}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="inline-block border border-white/70 hover:bg-white hover:text-dark px-7 py-3 rounded-full text-sm font-medium whitespace-nowrap transition-colors"
+					>
+						{t("order_whatsapp")}
+					</a>
 				</div>
 			</section>
-
-			<section className="px-6 md:px-10 xl:px-20 py-24">
-				<h3 className="font-serif text-3xl mb-10">Featured Collections</h3>
-				<div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-					{Object.entries({
-						silk: "https://us.louisvuitton.com/images/is/image/lv/1/PP_VP_L/louis-vuitton-monogram-single-breasted-napolitana-jacket--HUFJ2WUQW900_PM1_Worn%20view.png?wid=1090&hei=1090",
-						linen: "https://us.louisvuitton.com/images/is/image/lv/1/PP_VP_L/louis-vuitton-reversible-double-face-blouson--HUFB2EUYT802_PM1_Worn%20view.png?wid=1090&hei=1090",
-						cashmere: "https://us.louisvuitton.com/images/is/image/lv/1/PP_VP_L/louis-vuitton-cashmere-blend-formal-denim-pants--HUFD1WTPY650_PM1_Worn%20view.png?wid=1090&hei=1090"
-					}).map(([k, src], idx) => (
-						<div key={k} className="group">
-							<div className="aspect-[3/4] overflow-hidden bg-neutral-900 transition-transform duration-500 group-hover:scale-105 flex items-center justify-center">
-								<Image
-									src={src}
-									alt={`${k} collection`}
-									width={400}
-									height={533}
-									className="object-cover w-full h-full"
-									priority={idx === 0}
-								/>
-							</div>
-							<div className="mt-3 text-sm uppercase tracking-widest text-neutral-400">{k}</div>
-						</div>
-					))}
-				</div>
-			</section>
-
-			<section className="px-6 md:px-10 xl:px-20 py-24">
-				<h3 className="font-serif text-3xl mb-10">Testimonials</h3>
-				<div className="grid md:grid-cols-3 gap-8 text-neutral-300">
-					<blockquote>“Effortless elegance. Every piece feels intentional.”</blockquote>
-					<blockquote>“The fabrics are impeccable, the cuts are timeless.”</blockquote>
-					<blockquote>“My new wardrobe staples.”</blockquote>
-				</div>
-			</section>
-
-			<section className="px-6 md:px-10 xl:px-20 py-24 border-t border-white/10">
-				<div className="flex flex-col md:flex-row items-center justify-between gap-6">
-					<h3 className="font-serif text-3xl">{t("newsletter_cta")}</h3>
-					<form action="/api/newsletter" method="post" className="flex w-full md:w-auto">
-						<input name="email" type="email" required placeholder="email" className="bg-black border border-white/20 px-4 py-3 w-full md:w-80 placeholder:text-neutral-500" />
-						<button className="border border-white px-6 py-3 uppercase tracking-widest hover:bg-white hover:text-black transition-colors">Sign up</button>
-					</form>
-				</div>
-			</section>
-
-			<footer className="px-6 md:px-10 xl:px-20 py-12 flex items-center justify-between text-sm text-neutral-400">
-				<div>© {new Date().getFullYear()} Amigo</div>
-				<nav className="flex gap-6">
-					<Link href="/fr">FR</Link>
-					<Link href="/en">EN</Link>
-					<Link href="/ar">AR</Link>
-				</nav>
-			</footer>
 		</main>
 	);
-} 
+}

@@ -10,14 +10,22 @@ type Props = {
 
 export default function ImageUploader({ value, onChange }: Props) {
 	const [busy, setBusy] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	async function handleFiles(files: FileList | null) {
 		if (!files || files.length === 0) return;
 		setBusy(true);
+		setError(null);
 		try {
 			const sigRes = await fetch("/api/upload/sign");
+			if (!sigRes.ok) {
+				const data = await sigRes.json().catch(() => ({}));
+				setError(data?.error || "Could not get upload signature");
+				return;
+			}
 			const { cloudName, apiKey, timestamp, signature, folder } = await sigRes.json();
 			const uploads: Image[] = [];
+			const failed: string[] = [];
 			for (const file of Array.from(files)) {
 				const form = new FormData();
 				form.append("file", file);
@@ -29,11 +37,17 @@ export default function ImageUploader({ value, onChange }: Props) {
 					method: "POST",
 					body: form,
 				});
-				if (!res.ok) continue;
+				if (!res.ok) {
+					failed.push(file.name);
+					continue;
+				}
 				const data = await res.json();
 				uploads.push({ url: data.secure_url, width: data.width, height: data.height, alt: file.name });
 			}
-			onChange([...(value || []), ...uploads]);
+			if (failed.length > 0) setError(`Failed to upload: ${failed.join(", ")}`);
+			if (uploads.length > 0) onChange([...(value || []), ...uploads]);
+		} catch {
+			setError("Upload failed. Check your connection and try again.");
 		} finally {
 			setBusy(false);
 		}
@@ -54,23 +68,24 @@ export default function ImageUploader({ value, onChange }: Props) {
 	return (
 		<div className="space-y-3">
 			<div className="flex items-center gap-3">
-				<input type="file" multiple accept="image/*" onChange={(e) => handleFiles(e.target.files)} />
-				{busy && <span className="text-xs text-neutral-400">Uploading…</span>}
+				<input type="file" multiple accept="image/*" onChange={(e) => handleFiles(e.target.files)} className="text-sm" />
+				{busy && <span className="text-xs text-muted">Uploading…</span>}
 			</div>
+			{error && <p className="text-sm text-red-500">{error}</p>}
 			<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
 				{value?.map((img, i) => (
-					<div key={i} className="border border-white/20 p-2">
-						<img src={img.url} alt={img.alt} className="w-full h-32 object-cover" />
+					<div key={i} className="border border-border rounded-lg p-2 bg-surface-muted">
+						<img src={img.url} alt={img.alt} className="w-full h-32 object-contain rounded" />
 						<input
 							value={img.alt}
 							onChange={(e) => setAlt(i, e.target.value)}
 							placeholder="Alt text"
-							className="mt-2 w-full bg-black border border-white/20 px-2 py-1 text-xs"
+							className="mt-2 w-full bg-background border border-border rounded px-2 py-1 text-xs"
 						/>
-						<button type="button" onClick={() => removeAt(i)} className="mt-2 w-full border border-white/30 px-2 py-1 text-xs hover:bg-white hover:text-black">Remove</button>
+						<button type="button" onClick={() => removeAt(i)} className="mt-2 w-full border border-border rounded px-2 py-1 text-xs hover:bg-foreground hover:text-white transition-colors">Remove</button>
 					</div>
 				))}
 			</div>
 		</div>
 	);
-} 
+}

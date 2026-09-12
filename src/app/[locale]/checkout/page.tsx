@@ -55,27 +55,27 @@ export default function CheckoutPage() {
 
 	if (!hydrated) return null;
 	return (
-		<main className="px-6 md:px-10 xl:px-20 py-16 bg-black text-white">
-			<h1 className="font-serif text-5xl mb-8">Checkout</h1>
+		<main className="px-4 md:px-10 xl:px-20 py-12">
+			<h1 className="text-3xl font-bold mb-8">Checkout</h1>
 			<form onSubmit={onSubmit} className="grid md:grid-cols-3 gap-8">
 				<section className="md:col-span-2 space-y-4">
-					<input name="name" required placeholder="Name" className="w-full bg-black border border-white/20 px-4 py-3" />
+					<input name="name" required placeholder="Name" className="w-full bg-surface-muted rounded-lg px-4 py-3 outline-none" />
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-						<input name="phone1" required placeholder="Phone number 1" className="w-full bg-black border border-white/20 px-4 py-3" />
-						<input name="phone2" placeholder="Phone number 2 (optional)" className="w-full bg-black border border-white/20 px-4 py-3" />
+						<input name="phone1" required placeholder="Phone number 1" className="w-full bg-surface-muted rounded-lg px-4 py-3 outline-none" />
+						<input name="phone2" placeholder="Phone number 2 (optional)" className="w-full bg-surface-muted rounded-lg px-4 py-3 outline-none" />
 					</div>
-					<select name="wilaya" required className="w-full bg-black border border-white/20 px-4 py-3">
+					<select name="wilaya" required className="w-full bg-surface-muted rounded-lg px-4 py-3 outline-none">
 						<option value="">Select wilaya</option>
 						{WILAYAS.map((w) => (
 							<option key={w} value={w}>{w}</option>
 						))}
 					</select>
-					<input name="address" required placeholder="Address" className="w-full bg-black border border-white/20 px-4 py-3" />
-					<button disabled={busy} className="border border-white px-6 py-3 uppercase tracking-widest hover:bg-white hover:text-black disabled:opacity-50">{busy ? "Placing…" : "Place order"}</button>
-					{status && <p className="text-sm text-neutral-400">{status}</p>}
+					<input name="address" required placeholder="Address" className="w-full bg-surface-muted rounded-lg px-4 py-3 outline-none" />
+					<button disabled={busy} className="bg-foreground hover:bg-foreground/90 text-white rounded-lg px-6 py-3 font-medium disabled:opacity-50 transition-colors">{busy ? "Placing…" : "Place order"}</button>
+					{status && <p className="text-sm text-muted">{status}</p>}
 				</section>
-				<aside className="border border-white/20 p-6 self-start">
-					<div className="flex justify-between text-sm text-neutral-400">
+				<aside className="border border-border rounded-2xl p-6 self-start">
+					<div className="flex justify-between text-sm font-bold">
 						<span>Total</span>
 						<span>{formatPriceDZD(total)}</span>
 					</div>

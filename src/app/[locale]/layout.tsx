@@ -1,20 +1,16 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { notFound } from "next/navigation";
-import "../globals.css";
-import { Cormorant_Garamond, Inter } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import HtmlAttributes from "@/components/HtmlAttributes";
 export const metadata: Metadata = {
-	title: "Amigo",
-	description: "Amigo - Luxury womenswear",
+	title: "Hamadache Telecom",
+	description: "Hamadache Telecom - هواتف، إكسسوارات وشواحن بأفضل الأسعار في بومرداس",
 };
 
 export const locales = ["fr", "en", "ar"] as const;
 export type Locale = (typeof locales)[number];
-
-const serif = Cormorant_Garamond({ subsets: ["latin"], weight: ["400", "500", "600", "700"] });
-const sans = Inter({ subsets: ["latin"] });
 
 async function getMessages(locale: string) {
 	try {
@@ -32,14 +28,11 @@ export default async function LocaleLayout({ children, params }: { children: Rea
 	if (!messages) notFound();
 	const dir = locale === "ar" ? "rtl" : "ltr";
 	return (
-		<html lang={locale} dir={dir} className={`${serif.className} ${sans.className} bg-black text-white`}>
-			<body className="antialiased">
-				<NextIntlClientProvider locale={locale} messages={messages}>
-					<Navbar />
-					{children}
-					<Footer />
-				</NextIntlClientProvider>
-			</body>
-		</html>
+		<NextIntlClientProvider locale={locale} messages={messages}>
+			<HtmlAttributes locale={locale} dir={dir} />
+			<Navbar />
+			{children}
+			<Footer />
+		</NextIntlClientProvider>
 	);
 } 

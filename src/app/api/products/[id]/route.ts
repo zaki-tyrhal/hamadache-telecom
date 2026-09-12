@@ -9,7 +9,10 @@ const schema = z.object({
 	name: z.string().min(1).optional(),
 	description: z.string().min(1).optional(),
 	priceCents: z.number().int().nonnegative().optional(),
+	compareAtPriceCents: z.number().int().nonnegative().optional().nullable(),
 	category: z.string().min(1).optional(),
+	brand: z.string().min(1).optional(),
+	condition: z.enum(["new", "used"]).optional(),
 	sizes: z.array(z.string()).min(1).optional(),
 	colors: z.array(z.string()).min(1).optional(),
 	inStock: z.boolean().optional(),
@@ -18,10 +21,11 @@ const schema = z.object({
 
 export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
 	const { id } = await context.params;
-	const rows =await db.select().from(products).where(eq(products.id, Number(id))).all();
+	const rows = await db.select().from(products).where(eq(products.id, Number(id))).all();
 	const p = Array.isArray(rows) ? rows[0] : null;
 	if (!p) return NextResponse.json({ error: "Not found" }, { status: 404 });
-	return NextResponse.json(p);
+	const images = await db.select().from(productImages).where(eq(productImages.productId, Number(id))).all();
+	return NextResponse.json({ ...p, images });
 }
 
 export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {

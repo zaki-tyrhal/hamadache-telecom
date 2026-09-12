@@ -68,10 +68,10 @@ export default async function AdminDashboardPage() {
 	const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
 	return (
-		<main className="min-h-screen bg-black text-white px-6 md:px-10 xl:px-20 py-12">
+		<main className="min-h-screen px-4 md:px-10 py-10">
 			<header className="mb-8">
-				<h1 className="font-serif text-4xl">Dashboard</h1>
-				<p className="text-neutral-400 text-sm">Sales overview</p>
+				<h1 className="text-3xl font-bold">Dashboard</h1>
+				<p className="text-muted text-sm mt-1">Sales overview</p>
 			</header>
 			<AdminCharts
 				wilayaChart={wilayaChart}
